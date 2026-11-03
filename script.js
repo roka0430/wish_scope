@@ -140,27 +140,54 @@ class VersionManager {
 
 document.addEventListener("alpine:init", () => {
   Alpine.data("calculator", () => ({
+    INPUTS_LOCALSTORAGE_KEY: "wish_scope:inputs",
+    PRIMO_PAR_MONTH: 9500,
+    GOAL_MIN: 0,
+    GOAL_MAX: 7,
+
     wishCalculator: null,
     versionManager: null,
+    achievementRates: [],
 
-    goal: 0,
-    primo: 0,
-    fate: 0,
-    starlight: 0,
-    count: 0,
+    inputs: {
+      goal: 0,
+      primo: 0,
+      fate: 0,
+      starlight: 0,
+      count: 0,
+    },
 
     init() {
+      const inputs = localStorage.getItem(this.INPUTS_LOCALSTORAGE_KEY);
+
+      if (inputs) {
+        this.inputs = JSON.parse(inputs);
+      }
+
       this.wishCalculator = new WishCalculator();
       this.versionManager = new VersionManager();
       this.versionList = this.versionManager.generateVersionList(new Date(), 20);
-    },
 
-    get achievementRates() {
-      return this.wishCalculator ? this.wishCalculator.calcAchievementRates(this.goal) : [];
+      this.achievementRates = this.wishCalculator.calcAchievementRates(this.inputs.goal);
+
+      this.$watch(
+        () => this.inputs.goal,
+        () => {
+          this.inputs.goal = Math.max(Math.min(this.inputs.goal, this.GOAL_MAX), this.GOAL_MIN);
+          this.achievementRates = this.wishCalculator.calcAchievementRates(this.inputs.goal);
+        },
+      );
+
+      this.$watch(
+        () => this.inputs,
+        () => {
+          localStorage.setItem(this.INPUTS_LOCALSTORAGE_KEY, JSON.stringify(this.inputs));
+        },
+      );
     },
 
     get totalPrimo() {
-      return this.primo + (this.fate + this.count + Math.floor(this.starlight / 5)) * 160;
+      return this.inputs.primo + (this.inputs.fate + this.inputs.count + Math.floor(this.inputs.starlight / 5)) * 160;
     },
 
     formatDate(date) {
@@ -174,7 +201,7 @@ document.addEventListener("alpine:init", () => {
     },
 
     estimatePrimo(days) {
-      const primo = (this.totalPrimo + ((9500 * 12) / 365.2422) * days) * (16 / 15);
+      const primo = (this.totalPrimo + ((this.PRIMO_PAR_MONTH * 12) / 365.2422) * days) * (16 / 15);
       return Math.floor(primo);
     },
 
@@ -183,6 +210,10 @@ document.addEventListener("alpine:init", () => {
     },
 
     achieved(days) {
+      if (this.inputs.goal === 0) {
+        return "-";
+      }
+
       const count = this.estimateCount(days);
 
       if (this.achievementRates.length < count) {
@@ -190,7 +221,9 @@ document.addEventListener("alpine:init", () => {
       }
 
       const rate = this.achievementRates[count];
-      return `${(rate * 100).toFixed(4)}%`;
+      const percentage = Math.round(rate * 100 * 10000) / 10000;
+
+      return percentage >= 100 ? "100%" : `${percentage.toFixed(4)}%`;
     },
   }));
 });
