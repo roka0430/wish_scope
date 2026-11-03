@@ -139,25 +139,28 @@ class VersionManager {
 }
 
 document.addEventListener("alpine:init", () => {
-  Alpine.data("input", () => ({
-    calculator: null,
+  Alpine.data("calculator", () => ({
+    wishCalculator: null,
+    versionManager: null,
+
     goal: 0,
+    primo: 0,
+    fate: 0,
+    starlight: 0,
+    count: 0,
 
     init() {
-      this.calculator = new WishCalculator();
+      this.wishCalculator = new WishCalculator();
+      this.versionManager = new VersionManager();
+      this.versionList = this.versionManager.generateVersionList(new Date(), 20);
     },
 
     get achievementRates() {
-      return this.calculator ? this.calculator.calcAchievementRates(this.goal) : [];
+      return this.wishCalculator ? this.wishCalculator.calcAchievementRates(this.goal) : [];
     },
-  }));
 
-  Alpine.data("output", () => ({
-    versionManager: null,
-
-    init() {
-      this.versionManager = new VersionManager();
-      this.versionList = this.versionManager.generateVersionList(new Date(), 20);
+    get totalPrimo() {
+      return this.primo + (this.fate + this.count + Math.floor(this.starlight / 5)) * 160;
     },
 
     formatDate(date) {
@@ -168,6 +171,26 @@ document.addEventListener("alpine:init", () => {
       const day = String(d.getDate()).padStart(2, "0");
 
       return `${year}-${month}-${day}`;
+    },
+
+    estimatePrimo(days) {
+      const primo = (this.totalPrimo + ((9500 * 12) / 365.2422) * days) * (16 / 15);
+      return Math.floor(primo);
+    },
+
+    estimateCount(days) {
+      return Math.floor(this.estimatePrimo(days) / 160);
+    },
+
+    achieved(days) {
+      const count = this.estimateCount(days);
+
+      if (this.achievementRates.length < count) {
+        return "100%";
+      }
+
+      const rate = this.achievementRates[count];
+      return `${(rate * 100).toFixed(4)}%`;
     },
   }));
 });

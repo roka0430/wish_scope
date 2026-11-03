@@ -6,7 +6,33 @@
 
 main {
   display: flex;
-  gap: 10px;
+  gap: 20px;
 
   padding: 20px;
+}
+
+.input {
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+}
+
+.input label span {
+  display: inline-block;
+  width: 110px;
+}
+
+.input label input {
+  padding: 3px 5px;
+  outline: none;
+}
+
+.result-table {
+  border-collapse: collapse;
+}
+
+.result-table td,
+.result-table th {
+  padding: 3px 10px;
+  border: solid 1px #222;
 }

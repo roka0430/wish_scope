@@ -9,15 +9,31 @@
 </head>
 
 <body>
-  <main>
-    <section class="input" x-data="input">
+  <main x-data="calculator">
+    <section class="input">
       <label>
         <span>目標数</span>
-        <input type="number" x-model="goal" @focus="$el.select()">
+        <input type="number" x-model.number="goal" @focus="$el.select()">
+      </label>
+      <label>
+        <span>原石</span>
+        <input type="number" x-model.number="primo" @focus="$el.select()">
+      </label>
+      <label>
+        <span>紡がれた運命</span>
+        <input type="number" x-model.number="fate" @focus="$el.select()">
+      </label>
+      <label>
+        <span>スターライト</span>
+        <input type="number" x-model.number="starlight" @focus="$el.select()">
+      </label>
+      <label>
+        <span>天井カウント</span>
+        <input type="number" x-model.number="count" @focus="$el.select()">
       </label>
     </section>
-    <section class="output" x-data="output">
-      <table>
+    <section class="output">
+      <table class="result-table">
         <thead>
           <tr>
             <th>バージョン</th>
@@ -34,6 +50,9 @@
               <td x-text="version.name"></td>
               <td x-text="formatDate(version.end)"></td>
               <td x-text="version.remainingDays"></td>
+              <td x-text="estimatePrimo(version.remainingDays)"></td>
+              <td x-text="estimateCount(version.remainingDays)"></td>
+              <td x-text="achieved(version.remainingDays)"></td>
             </tr>
           </template>
         </tbody>
