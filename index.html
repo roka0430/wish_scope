@@ -9,7 +9,40 @@
 </head>
 
 <body>
+  <main>
+    <section class="input" x-data="input">
+      <label>
+        <span>目標数</span>
+        <input type="number" x-model="goal" @focus="$el.select()">
+      </label>
+    </section>
+    <section class="output" x-data="output">
+      <table>
+        <thead>
+          <tr>
+            <th>バージョン</th>
+            <th>終了日</th>
+            <th>残り日数</th>
+            <th>原石</th>
+            <th>連数</th>
+            <th>達成率</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="version in versionList">
+            <tr>
+              <td x-text="version.name"></td>
+              <td x-text="formatDate(version.end)"></td>
+              <td x-text="version.remainingDays"></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
   <script src="script.js" defer></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 
 </html>

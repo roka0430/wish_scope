@@ -67,13 +67,107 @@ class WishCalculator {
   }
 }
 
-const calculator = new WishCalculator();
-const rates = calculator.calcAchievementRates(1);
+class Version {
+  constructor(major, minor, half, start) {
+    this.major = major;
+    this.minor = minor;
+    this.half = half;
+    this.start = new Date(start);
+    this.start.setHours(0, 0, 0, 0);
+  }
 
-for (const [i, rate] of Object.entries(rates)) {
-  const rateStr = (rate * 100).toFixed(4);
-  console.log(`${i}連 ${rateStr}%`);
+  get name() {
+    return `${this.major}.${this.minor}${["前半", "後半"][this.half]}`;
+  }
+
+  get end() {
+    const days = [20, 21][this.half];
+    return this.addDays(this.start, days);
+  }
+
+  get next() {
+    if (this.half === 0) {
+      return new Version(this.major, this.minor, 1, this.end);
+    }
+
+    if (this.minor >= 8) {
+      return new Version(this.major + 1, 0, 0, this.addDays(this.end, 1));
+    }
+
+    return new Version(this.major, this.minor + 1, 0, this.addDays(this.end, 1));
+  }
+
+  get remainingDays() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return Math.ceil((this.end - today) / (1000 * 60 * 60 * 24));
+  }
+
+  addDays(date, days) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  }
 }
 
-// TODO alpineでinputを作って目標数を入力可能にする
-// TODO graphで達成率を見られるようにする
+class VersionManager {
+  VERSION_BASIS = new Version(7, 0, 0, "2026-08-12");
+
+  generateVersionList(startDate, versions) {
+    const startDt = new Date(startDate);
+
+    let version = this.VERSION_BASIS;
+    while (this.compareDate(startDt, version.next.start) >= 0) {
+      version = version.next;
+    }
+
+    const versionList = [version];
+    for (let i = 0; i < versions - 1; i++) {
+      versionList.push(versionList[i].next);
+    }
+
+    return versionList;
+  }
+
+  compareDate(date1, date2) {
+    const a = new Date(date1).getTime();
+    const b = new Date(date2).getTime();
+
+    return Math.sign(a - b);
+  }
+}
+
+document.addEventListener("alpine:init", () => {
+  Alpine.data("input", () => ({
+    calculator: null,
+    goal: 0,
+
+    init() {
+      this.calculator = new WishCalculator();
+    },
+
+    get achievementRates() {
+      return this.calculator ? this.calculator.calcAchievementRates(this.goal) : [];
+    },
+  }));
+
+  Alpine.data("output", () => ({
+    versionManager: null,
+
+    init() {
+      this.versionManager = new VersionManager();
+      this.versionList = this.versionManager.generateVersionList(new Date(), 20);
+    },
+
+    formatDate(date) {
+      const d = new Date(date);
+
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    },
+  }));
+});
