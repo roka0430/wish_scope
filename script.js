@@ -153,12 +153,12 @@ document.addEventListener("alpine:init", () => {
   Alpine.data("calculator", () => ({
     INPUTS_LOCALSTORAGE_KEY: "wish_scope:inputs",
     PRIMO_PAR_MONTH: 9500,
-    GOAL_MIN: 0,
+    GOAL_MIN: 1,
     GOAL_MAX: 12,
 
     wishCalculator: null,
     versionManager: null,
-    achievementRates: [],
+    achievementRatesList: null,
 
     inputs: {
       goal: 0,
@@ -169,6 +169,8 @@ document.addEventListener("alpine:init", () => {
     },
 
     init() {
+      this.achievementRatesList = new Array(this.GOAL_MAX).fill(null);
+
       const inputs = localStorage.getItem(this.INPUTS_LOCALSTORAGE_KEY);
 
       if (inputs) {
@@ -179,13 +181,18 @@ document.addEventListener("alpine:init", () => {
       this.versionManager = new VersionManager();
       this.versionList = this.versionManager.generateVersionList(new Date(), 20);
 
-      this.achievementRates = this.wishCalculator.calcAchievementRates(this.inputs.goal);
+      this.achievementRatesList[this.inputs.goal - 1] = this.wishCalculator.calcAchievementRates(this.inputs.goal);
 
       this.$watch(
         () => this.inputs.goal,
         () => {
           this.inputs.goal = Math.max(Math.min(this.inputs.goal, this.GOAL_MAX), this.GOAL_MIN);
-          this.achievementRates = this.wishCalculator.calcAchievementRates(this.inputs.goal);
+
+          if (this.achievementRatesList[this.inputs.goal - 1] === null) {
+            this.achievementRatesList[this.inputs.goal - 1] = this.wishCalculator.calcAchievementRates(
+              this.inputs.goal,
+            );
+          }
         },
       );
 
@@ -221,17 +228,17 @@ document.addEventListener("alpine:init", () => {
     },
 
     achieved(days) {
-      if (this.inputs.goal === 0) {
+      if (this.inputs.goal === 0 || this.achievementRatesList[this.inputs.goal - 1] === null) {
         return "-";
       }
 
       const count = this.estimateCount(days);
 
-      if (this.achievementRates.length < count) {
+      if (this.achievementRatesList[this.inputs.goal - 1].length < count) {
         return "100%";
       }
 
-      const rate = this.achievementRates[count];
+      const rate = this.achievementRatesList[this.inputs.goal - 1][count];
       const percentage = Math.round(rate * 100 * 10000) / 10000;
 
       return percentage >= 100 ? "100%" : `${percentage.toFixed(4)}%`;
