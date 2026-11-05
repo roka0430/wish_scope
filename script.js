@@ -1,10 +1,8 @@
 class WishCalculator {
   MAX_PITY = 90;
 
-  updateDP(dp, goal) {
-    const next = Array.from({ length: goal + 1 }, () =>
-      Array.from({ length: 2 }, () => Array(this.MAX_PITY + 1).fill(0)),
-    );
+  updateDP(dp, next, goal) {
+    next.forEach((item) => item.forEach((lost) => lost.fill(0)));
 
     let achieved = 0;
 
@@ -48,6 +46,9 @@ class WishCalculator {
     const maxPulls = goal * 180;
 
     let dp = Array.from({ length: goal + 1 }, () => Array.from({ length: 2 }, () => Array(this.MAX_PITY + 1).fill(0)));
+    let next = Array.from({ length: goal + 1 }, () =>
+      Array.from({ length: 2 }, () => Array(this.MAX_PITY + 1).fill(0)),
+    );
 
     dp[0][0][0] = 1;
 
@@ -55,11 +56,11 @@ class WishCalculator {
     const rates = [0];
 
     for (let pull = 1; pull <= maxPulls; pull++) {
-      const result = this.updateDP(dp, goal, this.MAX_PITY);
+      const result = this.updateDP(dp, next, goal);
 
-      dp = result.next;
+      [dp, next] = [next, dp];
+
       achieved += result.achieved;
-
       rates.push(achieved);
     }
 
@@ -143,7 +144,7 @@ document.addEventListener("alpine:init", () => {
     INPUTS_LOCALSTORAGE_KEY: "wish_scope:inputs",
     PRIMO_PAR_MONTH: 9500,
     GOAL_MIN: 0,
-    GOAL_MAX: 7,
+    GOAL_MAX: 100,
 
     wishCalculator: null,
     versionManager: null,
