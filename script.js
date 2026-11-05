@@ -1,15 +1,27 @@
 class WishCalculator {
   MAX_PITY = 90;
 
+  index(item, lost, pity) {
+    return item * 2 * (this.MAX_PITY + 1) + lost * (this.MAX_PITY + 1) + pity;
+  }
+
   updateDP(dp, next, goal) {
-    next.forEach((item) => item.forEach((lost) => lost.fill(0)));
+    next.fill(0);
+
+    const pitySize = this.MAX_PITY + 1;
+    const itemSize = 2 * pitySize;
 
     let achieved = 0;
 
     for (let item = 0; item < goal; item++) {
+      const itemBase = item * itemSize;
+      const nextItemBase = itemBase + itemSize;
+
       for (let lost = 0; lost < 2; lost++) {
+        const base = itemBase + lost * pitySize;
+
         for (let pity = 0; pity < this.MAX_PITY; pity++) {
-          const prob = dp[item][lost][pity];
+          const prob = dp[base + pity];
 
           if (prob === 0) {
             continue;
@@ -17,11 +29,10 @@ class WishCalculator {
 
           const count = pity + 1;
           const odds = count < 73 ? 6 : 6 + (count - 73) * 60;
-
           const p = Math.min(odds / 1000, 1);
 
           if (p < 1) {
-            next[item][lost][count] += prob * (1 - p);
+            next[base + count] += prob * (1 - p);
           }
 
           const targetProb = lost ? p : p * 0.5;
@@ -29,11 +40,11 @@ class WishCalculator {
           if (item + 1 === goal) {
             achieved += prob * targetProb;
           } else {
-            next[item + 1][0][0] += prob * targetProb;
+            next[nextItemBase] += prob * targetProb;
           }
 
           if (!lost) {
-            next[item][1][0] += prob * p * 0.5;
+            next[itemBase + pitySize] += prob * p * 0.5;
           }
         }
       }
@@ -45,12 +56,11 @@ class WishCalculator {
   calcAchievementRates(goal) {
     const maxPulls = goal * 180;
 
-    let dp = Array.from({ length: goal + 1 }, () => Array.from({ length: 2 }, () => Array(this.MAX_PITY + 1).fill(0)));
-    let next = Array.from({ length: goal + 1 }, () =>
-      Array.from({ length: 2 }, () => Array(this.MAX_PITY + 1).fill(0)),
-    );
+    const size = (goal + 1) * 2 * (this.MAX_PITY + 1);
+    let dp = new Float64Array(size);
+    let next = new Float64Array(size);
 
-    dp[0][0][0] = 1;
+    dp[this.index(0, 0, 0)] = 1;
 
     let achieved = 0;
     const rates = [0];
@@ -144,7 +154,7 @@ document.addEventListener("alpine:init", () => {
     INPUTS_LOCALSTORAGE_KEY: "wish_scope:inputs",
     PRIMO_PAR_MONTH: 9500,
     GOAL_MIN: 0,
-    GOAL_MAX: 100,
+    GOAL_MAX: 12,
 
     wishCalculator: null,
     versionManager: null,
@@ -169,7 +179,7 @@ document.addEventListener("alpine:init", () => {
       this.versionManager = new VersionManager();
       this.versionList = this.versionManager.generateVersionList(new Date(), 20);
 
-      this.achievementRates = this.wishCalculator.calcAchievementRates(this.inputs.goal);
+      const start = performance.now();
 
       this.$watch(
         () => this.inputs.goal,
