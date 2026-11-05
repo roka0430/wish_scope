@@ -179,7 +179,7 @@ document.addEventListener("alpine:init", () => {
       this.versionManager = new VersionManager();
       this.versionList = this.versionManager.generateVersionList(new Date(), 20);
 
-      const start = performance.now();
+      this.achievementRates = this.wishCalculator.calcAchievementRates(this.inputs.goal);
 
       this.$watch(
         () => this.inputs.goal,
